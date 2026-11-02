@@ -4,7 +4,6 @@
   "description": "手机竖屏优先的斗地主手动记牌器，支持离线使用。",
   "lang": "zh-CN",
   "dir": "ltr",
-  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
