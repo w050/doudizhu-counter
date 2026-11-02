@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#041f18">
+  <meta name="application-name" content="记牌器">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="记牌器">
+  <title>斗地主手动记牌器</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <style>
+    /* =========================================================
+       1. 基础变量与页面底色
+       ========================================================= */
+    :root {
+      color-scheme: dark;
+      --bg-deep: #031712;
+      --bg-mid: #06281f;
+      --bg-green: #0b3b2c;
+      --text: #f7f2e6;
+      --muted: #8fb3a4;
+      --gold: #e0bd79;
+      --gold-light: #f5dfb1;
+      --gold-dark: #8d682e;
+      --line: rgba(247, 233, 201, 0.12);
+      --panel: rgba(255, 255, 255, 0.055);
+      --green-live: #78dda8;
+      --red: #a93628;
+      --card-ink: #17271f;
+      --page-width: 640px;
+      --dock-space: 104px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system,
+        "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse at 50% -12%, rgba(49, 143, 103, 0.45), transparent 50%),
+        radial-gradient(circle at 110% 100%, rgba(190, 143, 64, 0.12), transparent 36%),
+        linear-gradient(165deg, var(--bg-green) 0%, var(--bg-mid) 46%, var(--bg-deep) 100%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 细密点阵纹理，增加深绿色牌桌的层次。 */
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      content: "";
+      opacity: 0.24;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.14) 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 80%);
+      mask-image: linear-gradient(to bottom, #000 0%, transparent 80%);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    /* =========================================================
+       2. 手机优先的主布局
+       ========================================================= */
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: var(--page-width);
+      margin: 0 auto;
+      padding:
+        calc(14px + env(safe-area-inset-top, 0px))
+        14px
+        calc(var(--dock-space) + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* =========================================================
+       3. 顶部品牌与统计
+       ========================================================= */
+    .hero__top {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand__mark {
+      display: grid;
+      width: 39px;
+      height: 39px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 11px;
+      color: #16372b;
+      background: linear-gradient(145deg, #fbf0d4 0%, #e0c184 52%, #c79f56 100%);
+      box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 21px;
+      line-height: 1;
+      transform: rotate(-3deg);
+      user-select: none;
+    }
+
+    .brand__text {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 2px;
+      color: var(--gold);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    h1 {
+      overflow: hidden;
+      margin: 0;
+      color: #fcf8ed;
+      font-size: 1.42rem;
+      font-weight: 800;
+      letter-spacing: 0.015em;
+      line-height: 1.12;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hero__chip {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid rgba(247, 233, 201, 0.1);
+      border-radius: 999px;
+      color: #a5c4b5;
+      background: rgba(3, 28, 21, 0.35);
+      font-size: 0.62rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--green-live);
+      box-shadow: 0 0 0 3px rgba(120, 221, 168, 0.1), 0 0 10px rgba(120, 221, 168, 0.42);
+    }
+
+    /* 顶部两张核心统计卡片 */
+    .summary {
+      display: grid;
+      min-width: 0;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 10px 12px 11px;
+      border: 1px solid rgba(247, 233, 201, 0.09);
+      border-radius: 16px;
+      background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+        rgba(3, 28, 21, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .metric--primary {
+      border-color: rgba(224, 189, 121, 0.22);
+      background:
+        linear-gradient(150deg, rgba(224, 189, 121, 0.11), rgba(255, 255, 255, 0.022)),
+        rgba(3, 28, 21, 0.24);
+    }
+
+    .metric__label {
+      display: block;
+      overflow: hidden;
+      color: #8daf9f;
+      font-size: 0.63rem;
+      font-weight: 600;
+      letter-spacing: 0.045em;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric__value {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 3px;
+      color: var(--gold-light);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .metric__value strong {
+      display: inline-block;
+      font-size: clamp(1.8rem, 8vw, 2.15rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .metric__sub {
+      color: #a8bdb2;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .metric__unit {
+      color: #a8bdb2;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+
+    .status-row {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 8px;
+      min-height: 20px;
+      margin-top: 9px;
+      padding: 0 2px;
+    }
+
+    .status {
+      min-width: 0;
+      overflow: hidden;
+      margin: 0;
+      color: #9ebbad;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* =========================================================
+       4. 牌面区域
+       ========================================================= */
+    .main {
+      margin-top: 4px;
+    }
+
+    .section-head {
+      display: flex;
+      min-width: 0;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 16px 2px 9px;
+    }
+
+    .section-head__title {
+      min-width: 0;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      color: #f4edde;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      line-height: 1.2;
+    }
+
+    .section-head p {
+      margin: 3px 0 0;
+      color: #789e8e;
+      font-size: 0.62rem;
+      line-height: 1.3;
+    }
+
+    .section-note {
+      flex: 0 0 auto;
+      color: #769b8b;
+      font-size: 0.6rem;
+      line-height: 1.4;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /*
+     * 手机优先网格：
+     * - 默认 4 列（大多数 360px～539px 手机）；
+     * - 540px 以上 5 列；
+     * - 359px 及以下 3 列，保证按钮足够大。
+     */
+    .cards-grid {
+      display: grid;
+      min-width: 0;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 90px;
+      aspect-ratio: 1 / 1.08;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 5px;
+      overflow: hidden;
+      padding: 9px 10px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.82);
+      border-radius: 14px;
+      color: var(--card-ink);
+      background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 253, 247, 0.97) 42%, rgba(239, 229, 206, 0.98) 100%);
+      box-shadow:
+        0 3px 0 #b3a078,
+        0 8px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      text-align: left;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        transform 0.12s cubic-bezier(0.2, 0.7, 0.3, 1),
+        box-shadow 0.12s ease,
+        background-color 0.12s ease,
+        filter 0.18s ease,
+        opacity 0.18s ease,
+        border-color 0.12s ease;
+    }
+
+    .card::after {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      content: "";
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.52), transparent 40%);
+      opacity: 0.32;
+    }
+
+    /* 轻微按压反馈：按下去时牌面缩小、阴影收紧。 */
+    .card:not(:disabled):active {
+      border-color: rgba(238, 200, 126, 0.95);
+      background: #fff8e7;
+      box-shadow:
+        0 1px 0 #b3a078,
+        0 3px 7px rgba(0, 0, 0, 0.16);
+      transform: scale(0.935);
+    }
+
+    .card:focus-visible {
+      z-index: 2;
+      outline: 3px solid var(--gold-light);
+      outline-offset: 3px;
+    }
+
+    .card__top {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      min-width: 0;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 3px;
+    }
+
+    .card__rank {
+      min-width: 0;
+      overflow: hidden;
+      color: #183027;
+      font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+      font-size: clamp(1.55rem, 6.2vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 0.95;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card--joker {
+      background:
+        linear-gradient(150deg, rgba(255, 252, 241, 0.99) 0%, rgba(250, 238, 208, 0.98) 48%, rgba(231, 212, 170, 0.99) 100%);
+    }
+
+    .card--joker .card__rank {
+      padding-top: 3px;
+      overflow: visible;
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      font-size: clamp(0.85rem, 3.7vw, 1.02rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .card[data-rank="2"] .card__rank {
+      color: var(--red);
+    }
+
+    .card[data-rank="小王"] .card__rank {
+      color: #1f3b30;
+    }
+
+    .card[data-rank="大王"] .card__rank {
+      color: var(--red);
+    }
+
+    .card__badge {
+      flex: 0 0 auto;
+      padding: 1px 4px;
+      border: 1px solid rgba(128, 66, 51, 0.18);
+      border-radius: 999px;
+      opacity: 0;
+      color: #8d493d;
+      background: rgba(155, 67, 50, 0.08);
+      font-size: 0.48rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.4;
+      transform: translateY(-2px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .card__body {
+      position: relative;
+      z-index: 1;
+      display: block;
+    }
+
+    .card__count {
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+      color: #17271f;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .card__count strong {
+      display: inline-block;
+      font-size: clamp(1.35rem, 5.4vw, 1.72rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      transform-origin: left center;
+    }
+
+    .card__count small {
+      color: #777466;
+      font-size: 0.56rem;
+      font-weight: 700;
+    }
+
+    .card__track {
+      display: block;
+      width: 100%;
+      height: 3px;
+      overflow: hidden;
+      margin-top: 5px;
+      border-radius: 999px;
+      background: rgba(22, 39, 31, 0.1);
+    }
+
+    .card__fill {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #a98445 0%, #d3b26c 100%);
+      transform: scaleX(1);
+      transform-origin: left center;
+      transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.3, 1);
+    }
+
+    /* 计数为 0：明显变灰、去饱和、禁用点击。 */
+    .card.is-empty {
+      border-color: rgba(255, 255, 255, 0.2);
+      opacity: 0.52;
+      background: linear-gradient(150deg, #d5d8d1 0%, #b5bcb5 100%);
+      box-shadow:
+        0 2px 0 #7a837b,
+        0 4px 8px rgba(0, 0, 0, 0.1);
+      filter: grayscale(1);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .card.is-empty::after {
+      opacity: 0.1;
+    }
+
+    .card.is-empty .card__badge {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card.is-empty .card__rank,
+    .card.is-empty .card__count strong {
+      color: #626c64;
+    }
+
+    .card.is-empty .card__count small {
+      color: #7b847d;
+    }
+
+    .card.is-empty .card__fill {
+      transform: scaleX(0) !important;
+    }
+
+    .card__count strong.is-bumping {
+      animation: count-pop 0.24s cubic-bezier(0.2, 0.8, 0.3, 1.35);
+    }
+
+    @keyframes count-pop {
+      0% {
+        transform: scale(1);
+      }
+      42% {
+        transform: scale(1.24);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* =========================================================
+       5. 底部固定操作栏
+       ========================================================= */
+    .dock {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 20;
+      padding:
+        10px
+        12px
+        calc(10px + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid rgba(247, 233, 201, 0.12);
+      background:
+        linear-gradient(180deg, rgba(4, 30, 23, 0.86) 0%, rgba(3, 22, 17, 0.98) 56%);
+      box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .dock__inner {
+      display: grid;
+      width: 100%;
+      max-width: var(--page-width);
+      margin: 0 auto;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 9px;
+    }
+
+    .dock-btn {
+      display: inline-flex;
+      min-width: 0;
+      height: 56px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 15px;
+      font-size: 0.94rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        transform 0.12s ease,
+        filter 0.12s ease,
+        box-shadow 0.12s ease,
+        opacity 0.15s ease;
+    }
+
+    .dock-btn svg {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dock-btn--primary {
+      border-color: rgba(255, 255, 255, 0.42);
+      color: #17362a;
+      background: linear-gradient(145deg, #f5dfaf 0%, #e1bf7d 52%, #cca45d 100%);
+      box-shadow:
+        0 3px 0 var(--gold-dark),
+        0 9px 18px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .dock-btn--secondary {
+      border-color: rgba(255, 255, 255, 0.13);
+      color: #e9e3d6;
+      background: rgba(255, 255, 255, 0.055);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .dock-btn:not(:disabled):active {
+      transform: translateY(2px) scale(0.985);
+      box-shadow: none;
+    }
+
+    .dock-btn:focus-visible {
+      outline: 3px solid var(--gold-light);
+      outline-offset: 3px;
+    }
+
+    .dock-btn:disabled {
+      opacity: 0.32;
+      cursor: not-allowed;
+      filter: grayscale(0.55);
+      box-shadow: none;
+    }
+
+    .dock-btn__badge {
+      display: inline-grid;
+      min-width: 21px;
+      height: 21px;
+      padding: 0 6px;
+      place-items: center;
+      border-radius: 999px;
+      color: #18352b;
+      background: rgba(11, 50, 39, 0.14);
+      font-size: 0.64rem;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    /* =========================================================
+       6. 稍宽屏幕与桌面适配
+       ========================================================= */
+    @media (min-width: 540px) {
+      .cards-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 700px) {
+      .app {
+        padding-right: 24px;
+        padding-left: 24px;
+      }
+
+      .hero__chip {
+        padding: 6px 10px;
+        font-size: 0.66rem;
+      }
+
+      .metric {
+        padding: 12px 15px 13px;
+      }
+
+      .metric__label {
+        font-size: 0.67rem;
+      }
+
+      .section-head h2 {
+        font-size: 0.98rem;
+      }
+
+      .section-head p,
+      .section-note {
+        font-size: 0.66rem;
+      }
+
+      .cards-grid {
+        gap: 10px;
+      }
+
+      .card {
+        border-radius: 16px;
+      }
+
+      .card:not(:disabled):hover {
+        border-color: rgba(244, 211, 145, 0.95);
+        transform: translateY(-2px);
+        box-shadow:
+          0 5px 0 #b3a078,
+          0 14px 24px rgba(0, 0, 0, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.92);
+      }
+
+      .card:not(:disabled):active {
+        transform: scale(0.95);
+      }
+
+      .dock {
+        padding-right: 24px;
+        padding-left: 24px;
+      }
+
+      .dock__inner {
+        max-width: 592px;
+      }
+    }
+
+    /* 窄屏：每行 3 张，按钮更大，且不产生横向滚动。 */
+    @media (max-width: 359px) {
+      .app {
+        padding-right: 11px;
+        padding-left: 11px;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .card {
+        padding: 8px 9px 9px;
+      }
+
+      .hero__chip {
+        display: none;
+      }
+
+      .section-note {
+        display: none;
+      }
+
+      .summary {
+        gap: 6px;
+      }
+
+      .metric {
+        padding-right: 9px;
+        padding-left: 9px;
+      }
+
+      .metric__label {
+        font-size: 0.58rem;
+      }
+
+      .status {
+        font-size: 0.67rem;
+      }
+
+      .dock {
+        padding-right: 10px;
+        padding-left: 10px;
+      }
+
+      .dock__inner {
+        gap: 7px;
+      }
+
+      .dock-btn {
+        height: 54px;
+        padding: 0 10px;
+        font-size: 0.88rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="hero__top">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">♠</div>
+          <div class="brand__text">
+            <p class="eyebrow">斗地主 · 手动记录</p>
+            <h1>记牌器</h1>
+          </div>
+        </div>
+        <div class="hero__chip">
+          <span class="live-dot" aria-hidden="true"></span>
+          本地记录
+        </div>
+      </div>
+
+      <div class="summary" aria-label="记牌统计">
+        <div class="metric metric--primary">
+          <span class="metric__label">已记牌数 / 总牌数</span>
+          <div class="metric__value">
+            <strong id="playedCount">0</strong>
+            <span class="metric__sub">/ <span id="totalCards">54</span></span>
+          </div>
+        </div>
+        <div class="metric">
+          <span class="metric__label">剩余总数</span>
+          <div class="metric__value">
+            <strong id="totalRemaining">54</strong>
+            <span class="metric__unit">张</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <span class="live-dot" aria-hidden="true"></span>
+        <p class="status" id="statusText" role="status" aria-live="polite">
+          准备就绪，点击牌面开始记牌
+        </p>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="section-head">
+        <div class="section-head__title">
+          <h2 id="cardsTitle">牌面剩余</h2>
+          <p>点一下，记一张</p>
+        </div>
+        <span class="section-note">普通牌各 4 张 · 王各 1 张</span>
+      </div>
+
+      <div
+        class="cards-grid"
+        id="cardsGrid"
+        role="group"
+        aria-labelledby="cardsTitle"
+        aria-label="牌面剩余张数"
+      ></div>
+    </main>
+  </div>
+
+  <!-- 底部固定操作栏：拇指可达，安全区适配 -->
+  <div class="dock" role="group" aria-label="记牌操作">
+    <div class="dock__inner">
+      <button class="dock-btn dock-btn--primary" id="undoBtn" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 7 4 12l5 5"></path>
+          <path d="M4 12h10a6 6 0 0 1 6 6v1"></path>
+        </svg>
+        <span>撤销</span>
+        <span class="dock-btn__badge" id="undoBadge" aria-hidden="true">0</span>
+      </button>
+
+      <button class="dock-btn dock-btn--secondary" id="resetBtn" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4v6h6"></path>
+          <path d="M5.2 15a7 7 0 1 0 .9-7.4L4 10"></path>
+        </svg>
+        <span>重置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      /* =========================================================
+       * 1. 牌面配置与初始数据
+       * ======================================================= */
+
+      /**
+       * 牌面配置（按显示顺序排列）。
+       * normal：普通牌，共 13 种，每种 4 张。
+       * joker：大小王，各 1 张。
+       */
+      const CARD_CONFIG = Object.freeze([
+        { rank: '3', total: 4, kind: 'normal' },
+        { rank: '4', total: 4, kind: 'normal' },
+        { rank: '5', total: 4, kind: 'normal' },
+        { rank: '6', total: 4, kind: 'normal' },
+        { rank: '7', total: 4, kind: 'normal' },
+        { rank: '8', total: 4, kind: 'normal' },
+        { rank: '9', total: 4, kind: 'normal' },
+        { rank: '10', total: 4, kind: 'normal' },
+        { rank: 'J', total: 4, kind: 'normal' },
+        { rank: 'Q', total: 4, kind: 'normal' },
+        { rank: 'K', total: 4, kind: 'normal' },
+        { rank: 'A', total: 4, kind: 'normal' },
+        { rank: '2', total: 4, kind: 'normal' },
+        { rank: '小王', total: 1, kind: 'joker' },
+        { rank: '大王', total: 1, kind: 'joker' }
+      ]);
+
+      // 通过牌名快速查找配置。
+      const CARD_MAP = new Map(CARD_CONFIG.map(card => [card.rank, card]));
+
+      // 撤销栈上限：只保留最近 100 步。
+      const MAX_UNDO = 100;
+
+      // 一副牌总数 = 13 × 4 + 2 = 54。
+      const TOTAL_CARDS = CARD_CONFIG.reduce((sum, card) => sum + card.total, 0);
+
+      // 尊重系统的“减少动态效果”设置。
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      /**
+       * 生成初始剩余张数对象，例如：
+       * { "3": 4, "4": 4, ..., "2": 4, "小王": 1, "大王": 1 }
+       * 每次重置都会重新调用，避免多个状态共享同一个对象引用。
+       */
+      function createInitialRemaining() {
+        return Object.fromEntries(CARD_CONFIG.map(card => [card.rank, card.total]));
+      }
+
+      /**
+       * 应用状态。
+       * remaining：每种牌当前还剩多少张。
+       * history：操作历史栈，按记牌顺序保存牌名，最后一项是最新操作。
+       */
+      const state = {
+        remaining: createInitialRemaining(),
+        history: []
+      };
+
+      /* =========================================================
+       * 2. DOM 引用
+       * ======================================================= */
+
+      const els = {
+        grid: document.querySelector('#cardsGrid'),
+        playedCount: document.querySelector('#playedCount'),
+        totalCards: document.querySelector('#totalCards'),
+        totalRemaining: document.querySelector('#totalRemaining'),
+        undoBadge: document.querySelector('#undoBadge'),
+        undoBtn: document.querySelector('#undoBtn'),
+        resetBtn: document.querySelector('#resetBtn'),
+        status: document.querySelector('#statusText'),
+        // 保存每张牌对应的 DOM 节点，更新时不再重复查询。
+        cardRefs: new Map()
+      };
+
+      /* =========================================================
+       * 3. 渲染
+       * ======================================================= */
+
+      /**
+       * 创建一张牌的按钮元素。
+       * 静态结构只创建一次，之后由 render() 更新数量、进度与禁用状态。
+       */
+      function createCardElement(card) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'card' + (card.kind === 'joker' ? ' card--joker' : '');
+        button.dataset.rank = card.rank;
+
+        button.innerHTML = `
+          <span class="card__top">
+            <span class="card__rank"></span>
+            <span class="card__badge" aria-hidden="true">出完</span>
+          </span>
+          <span class="card__body">
+            <span class="card__count">
+              <strong>${card.total}</strong>
+              <small>张</small>
+            </span>
+            <span class="card__track" aria-hidden="true">
+              <span class="card__fill"></span>
+            </span>
+          </span>
+        `;
+
+        // 牌名通过 textContent 写入，避免把数据当成 HTML 解析。
+        button.querySelector('.card__rank').textContent = card.rank;
+        els.grid.appendChild(button);
+
+        els.cardRefs.set(card.rank, {
+          button,
+          count: button.querySelector('.card__count strong'),
+          fill: button.querySelector('.card__fill')
+        });
+      }
+
+      function renderCards() {
+        CARD_CONFIG.forEach(createCardElement);
+      }
+
+      /**
+       * 判断是否处于初始状态（所有牌都是满张）。
+       * 用于控制“重置”按钮是否可点击。
+       */
+      function isInitialState() {
+        return CARD_CONFIG.every(card => state.remaining[card.rank] === card.total);
+      }
+
+      /**
+       * 数字变化时播放一次轻微弹跳动画。
+       * 先移除类名并强制读取布局，确保快速连点时动画可以重新触发。
+       */
+      function animateCount(element) {
+        element.classList.remove('is-bumping');
+        void element.offsetWidth;
+        element.classList.add('is-bumping');
+      }
+
+      /**
+       * 点击时的牌面轻触反馈。
+       * 使用 Web Animations API，不影响按钮本身的布局和点击逻辑。
+       */
+      function playTapFeedback(button) {
+        if (reducedMotion.matches || typeof button.animate !== 'function') return;
+
+        button.animate(
+          [
+            { transform: 'scale(1)' },
+            { transform: 'scale(0.94)' },
+            { transform: 'scale(1)' }
+          ],
+          {
+            duration: 170,
+            easing: 'ease-out'
+          }
+        );
+      }
+
+      /**
+       * 统一刷新界面。
+       * @param {string|null} changedRank 本回合数量变化的牌名，用于播放数字动画。
+       * @param {string|null} message 需要显示在状态栏的提示文案。
+       */
+      function render(changedRank = null, message = null) {
+        let totalRemaining = 0;
+
+        CARD_CONFIG.forEach(card => {
+          const count = state.remaining[card.rank];
+          const refs = els.cardRefs.get(card.rank);
+          const isEmpty = count === 0;
+          totalRemaining += count;
+
+          // 更新数字与进度条（进度条按“当前数量 / 初始数量”缩放）。
+          refs.count.textContent = String(count);
+          refs.fill.style.transform = `scaleX(${count / card.total})`;
+
+          // 张数为 0 时变灰并禁用，同时更新无障碍标签。
+          refs.button.classList.toggle('is-empty', isEmpty);
+          refs.button.disabled = isEmpty;
+          refs.button.setAttribute(
+            'aria-label',
+            `${card.rank}，剩余 ${count} 张${isEmpty ? '，已出完' : '，点击记一张'}`
+          );
+
+          if (changedRank === card.rank) {
+            animateCount(refs.count);
+          }
+        });
+
+        // 顶部统计：已记牌数 / 总牌数、剩余总数。
+        els.playedCount.textContent = String(TOTAL_CARDS - totalRemaining);
+        els.totalCards.textContent = String(TOTAL_CARDS);
+        els.totalRemaining.textContent = String(totalRemaining);
+
+        // 底部操作栏状态。
+        els.undoBadge.textContent = String(state.history.length);
+        els.undoBtn.disabled = state.history.length === 0;
+        els.undoBtn.setAttribute(
+          'aria-label',
+          `撤销上一步，当前可撤销 ${state.history.length} 步`
+        );
+        els.resetBtn.disabled = isInitialState();
+
+        if (message !== null) {
+          els.status.textContent = message;
+        }
+      }
+
+      /* =========================================================
+       * 4. 核心操作
+       * ======================================================= */
+
+      /**
+       * 记一张牌。
+       * 1. 校验牌名与剩余数量；
+       * 2. 剩余数量减 1，并把这次操作压入历史栈；
+       * 3. 历史超过 100 条时，丢弃最早的一条；
+       * 4. 重新渲染，并显示操作结果。
+       */
+      function recordCard(rank) {
+        const card = CARD_MAP.get(rank);
+        const count = state.remaining[rank];
+        if (!card || count <= 0) return;
+
+        state.remaining[rank] = count - 1;
+        state.history.push(rank);
+
+        // 只保留最近 100 步，保证撤销栈不会无限增长。
+        if (state.history.length > MAX_UNDO) {
+          state.history.shift();
+        }
+
+        const left = state.remaining[rank];
+        render(
+          rank,
+          left === 0
+            ? `「${rank}」已全部出完，按钮自动禁用`
+            : `已记下「${rank}」一张，还剩 ${left} 张`
+        );
+      }
+
+      /**
+       * 撤销最近一步。
+       * 从历史栈尾部弹出一条记录，把对应牌的数量加回 1。
+       * 由于历史最多 100 条，因此最多可连续撤销 100 步。
+       */
+      function undoLast() {
+        if (state.history.length === 0) return;
+
+        const rank = state.history.pop();
+        const total = CARD_MAP.get(rank).total;
+
+        // Math.min 用于防御性保护，正常流程不会超过初始数量。
+        state.remaining[rank] = Math.min(total, state.remaining[rank] + 1);
+
+        render(rank, `已撤销「${rank}」一张，还剩 ${state.remaining[rank]} 张`);
+      }
+
+      /**
+       * 重置所有数据：恢复初始张数，并清空撤销历史。
+       */
+      function resetAll() {
+        state.remaining = createInitialRemaining();
+        state.history = [];
+        render(null, '已重置，所有牌恢复为初始数量');
+      }
+
+      /* =========================================================
+       * 5. 事件绑定与初始化
+       * ======================================================= */
+
+      function bindEvents() {
+        // 事件委托：所有牌按钮共用同一个点击监听器。
+        els.grid.addEventListener('click', event => {
+          const cardButton = event.target.closest('.card');
+          if (!cardButton || !els.grid.contains(cardButton) || cardButton.disabled) return;
+
+          playTapFeedback(cardButton);
+          recordCard(cardButton.dataset.rank);
+        });
+
+        els.undoBtn.addEventListener('click', undoLast);
+        els.resetBtn.addEventListener('click', resetAll);
+
+        // 快捷键：Ctrl + Z（Windows / Linux）或 ⌘ + Z（macOS）撤销。
+        document.addEventListener('keydown', event => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+            event.preventDefault();
+            undoLast();
+          }
+        });
+      }
+
+      // 初始化：同步总牌数、创建牌面、绑定事件，最后刷新数据。
+      els.totalCards.textContent = String(TOTAL_CARDS);
+      renderCards();
+      bindEvents();
+      render();
+    })();
+  </script>
+
+  <script>
+    /*
+     * 注册 Service Worker。
+     * 注意：PWA 与 Service Worker 需要 HTTPS 或 localhost 环境；
+     * 直接用 file:// 打开页面时，浏览器会拒绝注册 Service Worker。
+     */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(error => {
+          console.warn('Service Worker 注册失败：', error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
