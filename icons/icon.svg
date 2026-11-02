@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="斗地主手动记牌器图标">
+  <!--
+    PWA 图标源文件（512 × 512）。
+    使用同一份 SVG 生成 icon-192.png 与 icon-512.png，生成命令见 icons/README.md。
+  -->
+  <defs>
+    <linearGradient id="bg" x1="64" y1="24" x2="452" y2="492" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12523d"/>
+      <stop offset="0.55" stop-color="#082f24"/>
+      <stop offset="1" stop-color="#031712"/>
+    </linearGradient>
+
+    <linearGradient id="cardFace" x1="170" y1="100" x2="340" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffdf7"/>
+      <stop offset="0.55" stop-color="#fbf3df"/>
+      <stop offset="1" stop-color="#ead9b4"/>
+    </linearGradient>
+
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#f7e5bb"/>
+      <stop offset="0.5" stop-color="#ddb970"/>
+      <stop offset="1" stop-color="#b88b43"/>
+    </linearGradient>
+
+    <filter id="cardShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- 满版深绿底色，便于系统裁剪成圆形或圆角矩形 -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- 装饰细环 -->
+  <circle cx="256" cy="256" r="198" fill="none" stroke="#e0bd79" stroke-opacity="0.18" stroke-width="2"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#e0bd79" stroke-opacity="0.07" stroke-width="1"/>
+
+  <!-- 后方金色牌 -->
+  <g transform="rotate(-9 256 256)" filter="url(#cardShadow)">
+    <rect x="150" y="92" width="212" height="328" rx="27" fill="#0a3327" stroke="url(#gold)" stroke-width="5"/>
+    <rect x="163" y="105" width="186" height="302" rx="19" fill="none" stroke="#f7e5bb" stroke-opacity="0.16" stroke-width="2"/>
+  </g>
+
+  <!-- 前方象牙白牌 -->
+  <g transform="rotate(5 256 256)" filter="url(#cardShadow)">
+    <rect x="158" y="102" width="196" height="308" rx="25" fill="url(#cardFace)" stroke="#f7e5bb" stroke-width="3"/>
+    <rect x="172" y="116" width="168" height="280" rx="17" fill="none" stroke="#b88b43" stroke-opacity="0.22" stroke-width="2"/>
+
+    <!-- 左上、右下的小菱形装饰 -->
+    <path d="M193 134l9 13-9 13-9-13z" fill="url(#gold)"/>
+    <path d="M319 352l9 13-9 13-9-13z" fill="url(#gold)"/>
+
+    <!-- 黑桃主图形 -->
+    <path
+      d="M256 158
+         C238 184 214 202 214 226
+         C214 245 229 258 247 258
+         C255 258 261 254 262 247
+         C263 257 270 264 279 264
+         C297 264 313 250 313 231
+         C313 207 286 185 256 158
+         Z"
+      fill="#0b3b2c"
+    />
+    <path
+      d="M244 262
+         C249 285 252 305 256 333
+         C260 305 263 285 268 262
+         C261 266 251 266 244 262
+         Z"
+      fill="#0b3b2c"
+    />
+
+    <!-- 底部金色短线，呼应牌面进度条 -->
+    <rect x="208" y="373" width="96" height="7" rx="3.5" fill="url(#gold)"/>
+  </g>
+</svg>
